@@ -63,12 +63,6 @@ Jozi Buddy will print a short message and start listening straight away. Just sp
 
 Press **Ctrl+C** at any time. The agent will say goodbye and exit cleanly.
 
-## Project Demo
-
-
-
-
-
 ## Make it your own
 
 Open `voice_agent.py` and find the `SYSTEM_PROMPT` string near the top. That's all you need to edit to give your agent a completely different personality, location, or focus area. For example:
