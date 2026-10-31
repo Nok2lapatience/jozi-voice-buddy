@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Jozi Buddy — a local voice AI agent powered by Amazon Nova Sonic and Strands Bidi Agents. Chat with a friendly Johannesburg-based voice companion." />
+  <title>Jozi Buddy — Voice AI Agent</title>
+  <style>
+    /* ── Reset & base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0f0a1a;
+      --surface:     #1a1230;
+      --surface-2:   #231848;
+      --gradient-a:  #3b1f6e;
+      --gradient-b:  #7c3a00;
+      --accent:      #f59e0b;
+      --accent-2:    #a855f7;
+      --text:        #f3f0ff;
+      --text-muted:  #b8aed4;
+      --code-bg:     #0d0917;
+      --radius:      12px;
+      --radius-sm:   8px;
+      --focus:       #f59e0b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Accessible focus ring */
+    :focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    a { color: var(--accent); text-decoration: underline; }
+    a:hover { color: #fcd34d; }
+
+    img, svg { display: block; }
+
+    /* ── Skip link ──────────────────────────────────────────────── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--accent);
+      color: #000;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      z-index: 9999;
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 1rem; }
+
+    /* ── Layout helpers ─────────────────────────────────────────── */
+    .container {
+      max-width: 1100px;
+      margin-inline: auto;
+      padding-inline: clamp(1rem, 5vw, 2.5rem);
+    }
+
+    section { padding-block: clamp(3rem, 8vw, 5rem); }
+
+    /* ── Nav ────────────────────────────────────────────────────── */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15, 10, 26, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(168, 85, 247, 0.15);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-block: 0.875rem;
+    }
+
+    .nav-brand {
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-brand .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── Hero ───────────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding-block: clamp(4rem, 12vw, 8rem);
+      text-align: center;
+    }
+
+    /* Gradient backdrop */
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 40%, rgba(59, 31, 110, 0.7) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 50% at 80% 60%, rgba(124, 58, 0, 0.6) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 40% at 50% 0%,  rgba(168, 85, 247, 0.2) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Subtle grid overlay */
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(168, 85, 247, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(168, 85, 247, 0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      padding: 0.35rem 0.9rem;
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-title {
+      font-size: clamp(3rem, 10vw, 6.5rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #f3f0ff 30%, #f59e0b 70%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--text-muted);
+      max-width: 600px;
+      margin-inline: auto;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-tagline strong { color: var(--text); font-weight: 600; }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    /* ── Buttons ────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn:hover  { transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35);
+    }
+
+    .btn-primary:hover {
+      color: #000;
+      box-shadow: 0 6px 28px rgba(245, 158, 11, 0.5);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1.5px solid rgba(255,255,255,0.2);
+    }
+
+    .btn-outline:hover {
+      color: var(--text);
+      border-color: rgba(255,255,255,0.45);
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* GitHub icon */
+    .btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* ── Section titles ─────────────────────────────────────────── */
+    .section-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      margin-bottom: 0.5rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      max-width: 560px;
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── Feature cards ──────────────────────────────────────────── */
+    .features { background: var(--surface); }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--surface-2);
+      border: 1px solid rgba(168, 85, 247, 0.15);
+      border-radius: var(--radius);
+      padding: 2rem 1.75rem;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      border-color: rgba(168, 85, 247, 0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(59, 31, 110, 0.5);
+    }
+
+    .card-icon {
+      width: 48px; height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-icon-voice   { background: rgba(245, 158, 11, 0.15); }
+    .card-icon-nova    { background: rgba(168, 85, 247, 0.15); }
+    .card-icon-kiro    { background: rgba(34, 197, 94, 0.12); }
+
+    .card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    /* ── How it works ───────────────────────────────────────────── */
+    .how {
+      border-top: 1px solid rgba(168, 85, 247, 0.1);
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      counter-reset: steps;
+    }
+
+    .step {
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+      padding: 1.25rem 1.5rem;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(168, 85, 247, 0.1);
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gradient-a), var(--gradient-b));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #fff;
+      counter-increment: steps;
+    }
+
+    .step-body { flex: 1; }
+    .step-body strong { display: block; margin-bottom: 0.2rem; font-size: 0.95rem; }
+    .step-body p { font-size: 0.875rem; color: var(--text-muted); }
+
+    /* ── Run locally ────────────────────────────────────────────── */
+    .run { background: var(--surface); }
+
+    .run-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 700px) {
+      .run-grid { grid-template-columns: 1fr; }
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.75;
+      tab-size: 2;
+      position: relative;
+    }
+
+    code {
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas,
+                   "Courier New", monospace;
+      color: #e2d9f3;
+    }
+
+    pre code .comment { color: #6b5e8c; }
+    pre code .cmd     { color: #f59e0b; }
+    pre code .kw      { color: #a855f7; }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.6rem;
+      background: rgba(168, 85, 247, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.72rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .copy-btn:hover { background: rgba(168, 85, 247, 0.3); color: var(--text); }
+
+    /* ── Tech stack ─────────────────────────────────────────────── */
+    .tech { border-top: 1px solid rgba(168, 85, 247, 0.1); }
+
+    .tech-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .tech-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.875rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid rgba(168, 85, 247, 0.12);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .tech-list li span.icon { font-size: 1.2rem; }
+
+    /* ── CTA ────────────────────────────────────────────────────── */
+    .cta {
+      text-align: center;
+      background: var(--surface);
+      border-top: 1px solid rgba(168, 85, 247, 0.1);
+    }
+
+    .cta-box {
+      background: linear-gradient(135deg, rgba(59,31,110,0.5), rgba(124,58,0,0.4));
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      border-radius: var(--radius);
+      padding: clamp(2rem, 6vw, 3.5rem);
+    }
+
+    .cta h2 {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+    }
+
+    .cta p {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      max-width: 480px;
+      margin-inline: auto;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid rgba(168, 85, 247, 0.1);
+      padding-block: 2rem;
+      text-align: center;
+      font-size: 0.825rem;
+      color: var(--text-muted);
+    }
+
+    footer a { color: var(--text-muted); }
+    footer a:hover { color: var(--text); }
+
+    /* ── Responsive nav ─────────────────────────────────────────── */
+    @media (max-width: 520px) {
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <!-- Nav -->
+  <nav class="nav" aria-label="Site navigation">
+    <div class="container nav-inner">
+      <a href="#" class="nav-brand">
+        <span class="dot" aria-hidden="true"></span>
+        Jozi Buddy
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#run">Run locally</a></li>
+        <li><a href="#stack">Tech stack</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main">
+
+    <!-- Hero -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container hero-content">
+        <p class="hero-eyebrow" aria-label="Voice AI — Johannesburg">
+          <span aria-hidden="true">🎙️</span> Voice AI · Johannesburg
+        </p>
+        <h1 class="hero-title" id="hero-title">Jozi Buddy</h1>
+        <p class="hero-tagline">
+          A real-time voice AI agent powered by
+          <strong>Amazon Nova Sonic</strong> and
+          <strong>Strands Bidi Agents</strong> —
+          chat with your laptop like a local Joburg mate.
+        </p>
+        <div class="hero-actions">
+          <a href="https://github.com/Nok2lapatience/jozi-voice-buddy"
+             class="btn btn-primary"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="View Jozi Buddy source code on GitHub">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+            </svg>
+            View on GitHub
+          </a>
+          <a href="#run" class="btn btn-outline">
+            Run it locally
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features" aria-labelledby="features-title">
+      <div class="container">
+        <span class="section-label" aria-hidden="true">What you get</span>
+        <h2 class="section-title" id="features-title">Built for real conversation</h2>
+        <p class="section-desc">
+          No typing, no speech-to-text pipeline, no lag. Just speak and Jozi Buddy speaks back.
+        </p>
+        <div class="cards" role="list">
+
+          <article class="card" role="listitem">
+            <div class="card-icon card-icon-voice" aria-hidden="true">🎙️</div>
+            <h3>Real-time voice</h3>
+            <p>
+              Full-duplex streaming means audio flows in both directions at once.
+              Interrupt mid-sentence, and the agent picks up your new question immediately —
+              no awkward wait.
+            </p>
+          </article>
+
+          <article class="card" role="listitem">
+            <div class="card-icon card-icon-nova" aria-hidden="true">⚡</div>
+            <h3>Powered by Nova Sonic</h3>
+            <p>
+              Amazon Nova 2.5 Sonic is a speech-to-speech foundation model on Amazon Bedrock
+              that understands tone and context — not just words. Running in <code>us-east-1</code>
+              for low latency.
+            </p>
+          </article>
+
+          <article class="card" role="listitem">
+            <div class="card-icon card-icon-kiro" aria-hidden="true">🤖</div>
+            <h3>Built with Kiro</h3>
+            <p>
+              The entire project was designed and implemented inside the Kiro IDE —
+              an AI-powered development environment. Spec, code, README, and this page:
+              all Kiro-assisted.
+            </p>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="how" aria-labelledby="how-title">
+      <div class="container">
+        <span class="section-label" aria-hidden="true">Under the hood</span>
+        <h2 class="section-title" id="how-title">How it works</h2>
+        <p class="section-desc">
+          Four moving parts, wired together in about 40 lines of Python.
+        </p>
+        <ol class="steps" aria-label="How Jozi Buddy works">
+
+          <li class="step">
+            <div class="step-num" aria-hidden="true">1</div>
+            <div class="step-body">
+              <strong>You speak</strong>
+              <p><code>AudioIO</code> captures microphone audio with echo cancellation and noise suppression enabled via WebRTC — so open laptop speakers work fine.</p>
+            </div>
+          </li>
+
+          <li class="step">
+            <div class="step-num" aria-hidden="true">2</div>
+            <div class="step-body">
+              <strong>Strands BidiAgent streams it to Bedrock</strong>
+              <p>A persistent bidirectional WebSocket keeps latency low and lets you barge in while the model is still talking.</p>
+            </div>
+          </li>
+
+          <li class="step">
+            <div class="step-num" aria-hidden="true">3</div>
+            <div class="step-body">
+              <strong>Nova Sonic processes speech end-to-end</strong>
+              <p>The model hears your audio directly — no transcript in the middle — so it picks up tone, pacing, and energy, not just words.</p>
+            </div>
+          </li>
+
+          <li class="step">
+            <div class="step-num" aria-hidden="true">4</div>
+            <div class="step-body">
+              <strong>Audio streams back to your speakers</strong>
+              <p>The agent's voice comes through your speakers in real time. The same <code>AudioIO</code> instance that captures also plays back, sharing the echo-cancellation reference signal.</p>
+            </div>
+          </li>
+
+        </ol>
+      </div>
+    </section>
+
+    <!-- Run locally -->
+    <section class="run" id="run" aria-labelledby="run-title">
+      <div class="container">
+        <span class="section-label" aria-hidden="true">Get started</span>
+        <h2 class="section-title" id="run-title">Run it on your laptop</h2>
+        <p class="section-desc">
+          You'll need Python 3.12+, PortAudio, and AWS credentials with Bedrock access in <code>us-east-1</code>.
+        </p>
+        <div class="run-grid">
+
+          <div>
+            <h3 style="margin-bottom:0.75rem; font-size:1rem; font-weight:700;">1. Clone &amp; install</h3>
+            <div style="position:relative;">
+              <pre><code><span class="comment"># clone the repo</span>
+<span class="cmd">git clone</span> https://github.com/Nok2lapatience/jozi-voice-buddy
+<span class="cmd">cd</span> jozi-voice-buddy
+
+<span class="comment"># create a virtual environment</span>
+<span class="cmd">python -m venv</span> .venv
+<span class="cmd">source</span> .venv/bin/activate   <span class="comment"># Windows: .venv\Scripts\activate</span>
+
+<span class="comment"># install dependencies</span>
+<span class="cmd">pip install -r</span> requirements.txt</code></pre>
+              <button class="copy-btn" data-target="install" aria-label="Copy install commands">Copy</button>
+            </div>
+          </div>
+
+          <div>
+            <h3 style="margin-bottom:0.75rem; font-size:1rem; font-weight:700;">2. Configure AWS &amp; run</h3>
+            <div style="position:relative;">
+              <pre><code><span class="comment"># configure AWS credentials</span>
+<span class="cmd">aws configure</span>
+<span class="comment"># → region: us-east-1</span>
+
+<span class="comment"># enable Nova Sonic in Bedrock console:</span>
+<span class="comment"># Bedrock → Model access → Amazon Nova Sonic</span>
+
+<span class="comment"># start the agent</span>
+<span class="cmd">python</span> voice_agent.py
+
+<span class="comment"># press Ctrl+C to end the chat</span></code></pre>
+              <button class="copy-btn" data-target="run" aria-label="Copy run commands">Copy</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Tech stack -->
+    <section class="tech" id="stack" aria-labelledby="stack-title">
+      <div class="container">
+        <span class="section-label" aria-hidden="true">Tech stack</span>
+        <h2 class="section-title" id="stack-title">What's inside</h2>
+        <ul class="tech-list" role="list" aria-label="Technologies used">
+          <li role="listitem">
+            <span class="icon" aria-hidden="true">🐍</span>
+            <span>Python 3.12</span>
+          </li>
+          <li role="listitem">
+            <span class="icon" aria-hidden="true">🔁</span>
+            <span>Strands Bidi Agents</span>
+          </li>
+          <li role="listitem">
+            <span class="icon" aria-hidden="true">⚡</span>
+            <span>Amazon Nova Sonic</span>
+          </li>
+          <li role="listitem">
+            <span class="icon" aria-hidden="true">☁️</span>
+            <span>Amazon Bedrock</span>
+          </li>
+          <li role="listitem">
+            <span class="icon" aria-hidden="true">🎙️</span>
+            <span>PyAudio + WebRTC</span>
+          </li>
+          <li role="listitem">
+            <span class="icon" aria-hidden="true">🤖</span>
+            <span>Kiro IDE</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta" aria-labelledby="cta-title">
+      <div class="container">
+        <div class="cta-box">
+          <h2 id="cta-title">Ready to give it a voice?</h2>
+          <p>Fork the repo, edit the system prompt, and make Jozi Buddy your own in minutes.</p>
+          <a href="https://github.com/Nok2lapatience/jozi-voice-buddy"
+             class="btn btn-primary"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="View Jozi Buddy source code on GitHub">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+            </svg>
+            View the code on GitHub
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>
+        Built with
+        <a href="https://kiro.dev" target="_blank" rel="noopener noreferrer">Kiro IDE</a>
+        ·
+        Powered by
+        <a href="https://aws.amazon.com/bedrock/nova/" target="_blank" rel="noopener noreferrer">Amazon Nova Sonic</a>
+        ·
+        <a href="https://strandsagents.com" target="_blank" rel="noopener noreferrer">Strands Bidi Agents</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Copy button functionality
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pre = btn.previousElementSibling;
+        const text = pre.innerText;
+
+        navigator.clipboard.writeText(text).then(() => {
+          const orig = btn.textContent;
+          btn.textContent = 'Copied!';
+          btn.style.color = '#4ade80';
+          setTimeout(() => {
+            btn.textContent = orig;
+            btn.style.color = '';
+          }, 1800);
+        }).catch(() => {
+          // Fallback for environments without clipboard API
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 1800);
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>
